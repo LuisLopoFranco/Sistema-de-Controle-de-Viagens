@@ -1,0 +1,91 @@
+{% extends 'travels/base.html' %}
+
+{% block title %}Nova Solicitação - Sistema de Viagens{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> Nova Solicitação de Viagem</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_destino" class="form-label">Destino *</label>
+                        {{ form.destino }}
+                        {% if form.destino.errors %}
+                            <div class="text-danger small">{{ form.destino.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_data_viagem" class="form-label">Data da Viagem *</label>
+                        {{ form.data_viagem }}
+                        {% if form.data_viagem.errors %}
+                            <div class="text-danger small">{{ form.data_viagem.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_quilometragem" class="form-label">Quilometragem Rodada (km) *</label>
+                        {{ form.quilometragem }}
+                        {% if form.quilometragem.errors %}
+                            <div class="text-danger small">{{ form.quilometragem.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_valor_litro" class="form-label">Valor do Litro (R$)</label>
+                            {{ form.valor_litro }}
+                            {% if form.valor_litro.errors %}
+                                <div class="text-danger small">{{ form.valor_litro.errors }}</div>
+                            {% endif %}
+                            <small class="text-muted">Opcional - apenas para referência</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_valor_total_combustivel" class="form-label">Valor Total Combustível (R$) *</label>
+                            {{ form.valor_total_combustivel }}
+                            {% if form.valor_total_combustivel.errors %}
+                                <div class="text-danger small">{{ form.valor_total_combustivel.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_nota_fiscal" class="form-label">Nota Fiscal *</label>
+                        {{ form.nota_fiscal }}
+                        {% if form.nota_fiscal.errors %}
+                            <div class="text-danger small">{{ form.nota_fiscal.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted">Formatos aceitos: PDF, JPG, PNG</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="id_conta_bancaria" class="form-label">Conta para Reembolso *</label>
+                        {{ form.conta_bancaria }}
+                        {% if form.conta_bancaria.errors %}
+                            <div class="text-danger small">{{ form.conta_bancaria.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted d-block mt-1">
+                            Não encontrou sua conta? <a href="{% url 'bank_account' %}">Cadastre aqui</a>
+                        </small>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Criar Solicitação
+                        </button>
+                        <a href="{% url 'my_requests' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

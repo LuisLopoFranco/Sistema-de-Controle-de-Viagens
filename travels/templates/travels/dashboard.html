@@ -1,0 +1,263 @@
+{% extends 'travels/base.html' %}
+
+{% block title %}Dashboard - Sistema de Viagens{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-speedometer2"></i> Dashboard</h2>
+
+    <!-- Filtro de período -->
+    <form method="get" class="d-flex gap-2">
+        <input type="date" name="data_inicial" class="form-control" value="{{ data_inicial }}" placeholder="Data Inicial">
+        <input type="date" name="data_final" class="form-control" value="{{ data_final }}" placeholder="Data Final">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-filter"></i> Filtrar
+        </button>
+        {% if data_inicial or data_final %}
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-x"></i> Limpar
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-stat shadow-sm border-start border-primary border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total de Solicitações</h6>
+                        <h3 class="mb-0">{{ total_requests }}</h3>
+                    </div>
+                    <i class="bi bi-file-text text-primary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-stat shadow-sm border-start border-warning border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Pendentes</h6>
+                        <h3 class="mb-0">{{ total_pendentes }}</h3>
+                    </div>
+                    <i class="bi bi-clock-history text-warning" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-stat shadow-sm border-start border-success border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Aprovadas</h6>
+                        <h3 class="mb-0">{{ total_aprovadas }}</h3>
+                    </div>
+                    <i class="bi bi-check-circle text-success" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-stat shadow-sm border-start border-danger border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Rejeitadas</h6>
+                        <h3 class="mb-0">{{ total_rejeitadas }}</h3>
+                    </div>
+                    <i class="bi bi-x-circle text-danger" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Total Gasto -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="text-white mb-2">Total Gasto com Viagens Aprovadas</h5>
+                <h1 class="text-white mb-0">R$ {{ total_gasto|floatformat:2 }}</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Ranking por Valor -->
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-trophy"></i> Top 10 - Maior Gasto Total</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if ranking_valor %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th width="50">#</th>
+                                <th>Colaborador</th>
+                                <th class="text-end">Total Gasto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in ranking_valor %}
+                            <tr>
+                                <td>
+                                    {% if forloop.counter == 1 %}
+                                        <i class="bi bi-trophy-fill text-warning"></i>
+                                    {% elif forloop.counter == 2 %}
+                                        <i class="bi bi-trophy-fill text-secondary"></i>
+                                    {% elif forloop.counter == 3 %}
+                                        <i class="bi bi-trophy-fill" style="color: #cd7f32;"></i>
+                                    {% else %}
+                                        {{ forloop.counter }}º
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.solicitante__first_name %}
+                                        {{ item.solicitante__first_name }} {{ item.solicitante__last_name }}
+                                    {% else %}
+                                        {{ item.solicitante__username }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <strong>R$ {{ item.total_gasto|floatformat:2 }}</strong>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <p class="mb-0 mt-2">Nenhum dado disponível</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Ranking por Número de Viagens -->
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Top 10 - Mais Viagens</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if ranking_viagens %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th width="50">#</th>
+                                <th>Colaborador</th>
+                                <th class="text-end">Nº Viagens</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in ranking_viagens %}
+                            <tr>
+                                <td>
+                                    {% if forloop.counter == 1 %}
+                                        <i class="bi bi-trophy-fill text-warning"></i>
+                                    {% elif forloop.counter == 2 %}
+                                        <i class="bi bi-trophy-fill text-secondary"></i>
+                                    {% elif forloop.counter == 3 %}
+                                        <i class="bi bi-trophy-fill" style="color: #cd7f32;"></i>
+                                    {% else %}
+                                        {{ forloop.counter }}º
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.solicitante__first_name %}
+                                        {{ item.solicitante__first_name }} {{ item.solicitante__last_name }}
+                                    {% else %}
+                                        {{ item.solicitante__username }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <strong>{{ item.num_viagens }}</strong>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <p class="mb-0 mt-2">Nenhum dado disponível</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Solicitações Recentes -->
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Solicitações Recentes</h5>
+    </div>
+    <div class="card-body">
+        {% if recent_requests %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Solicitante</th>
+                        <th>Destino</th>
+                        <th>Data Viagem</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in recent_requests %}
+                    <tr>
+                        <td>{{ request.solicitante.get_full_name|default:request.solicitante.username }}</td>
+                        <td>{{ request.destino }}</td>
+                        <td>{{ request.data_viagem|date:"d/m/Y" }}</td>
+                        <td>R$ {{ request.valor_total_combustivel|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge badge-status-{{ request.status }}">
+                                {{ request.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'request_detail' request.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center mt-3">
+            <a href="{% url 'all_requests' %}" class="btn btn-outline-primary">
+                <i class="bi bi-list-check"></i> Ver Todas as Solicitações
+            </a>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+            <p class="mb-0 mt-2">Nenhuma solicitação registrada</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'travels/base.html' %}
+
+{% block title %}Minhas Solicitações - Sistema de Viagens{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-list-ul"></i> Minhas Solicitações</h2>
+    <a href="{% url 'create_request' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nova Solicitação
+    </a>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-stat shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Pendentes</h6>
+                        <h3 class="mb-0">{{ pendentes }}</h3>
+                    </div>
+                    <i class="bi bi-clock-history text-warning" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-stat shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Aprovadas</h6>
+                        <h3 class="mb-0">{{ aprovadas }}</h3>
+                    </div>
+                    <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-stat shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Rejeitadas</h6>
+                        <h3 class="mb-0">{{ rejeitadas }}</h3>
+                    </div>
+                    <i class="bi bi-x-circle text-danger" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-stat shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Aprovado</h6>
+                        <h3 class="mb-0">R$ {{ total_gasto|floatformat:2 }}</h3>
+                    </div>
+                    <i class="bi bi-currency-dollar text-primary" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela de solicitações -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        {% if requests %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Destino</th>
+                        <th>Data</th>
+                        <th>Quilometragem</th>
+                        <th>Valor Combustível</th>
+                        <th>Status</th>
+                        <th>Aprovador</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in requests %}
+                    <tr>
+                        <td>{{ request.destino }}</td>
+                        <td>{{ request.data_viagem|date:"d/m/Y" }}</td>
+                        <td>{{ request.quilometragem }} km</td>
+                        <td>R$ {{ request.valor_total_combustivel|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge badge-status-{{ request.status }}">
+                                {{ request.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if request.aprovador %}
+                                {{ request.aprovador.get_full_name|default:request.aprovador.username }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'request_detail' request.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+            <p class="text-muted mt-3">Você ainda não possui solicitações.</p>
+            <a href="{% url 'create_request' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Criar Primeira Solicitação
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

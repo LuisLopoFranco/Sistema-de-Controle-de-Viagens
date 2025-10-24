@@ -1,0 +1,94 @@
+{% extends 'travels/base.html' %}
+
+{% block title %}Conta Bancária - Sistema de Viagens{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-bank"></i>
+                    {% if is_new %}Cadastrar{% else %}Atualizar{% endif %} Dados Bancários
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Estes dados serão usados para reembolso das despesas de viagem aprovadas.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="id_banco" class="form-label">Nome do Banco *</label>
+                            {{ form.banco }}
+                            {% if form.banco.errors %}
+                                <div class="text-danger small">{{ form.banco.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="id_codigo_banco" class="form-label">Código *</label>
+                            {{ form.codigo_banco }}
+                            {% if form.codigo_banco.errors %}
+                                <div class="text-danger small">{{ form.codigo_banco.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="id_agencia" class="form-label">Agência *</label>
+                            {{ form.agencia }}
+                            {% if form.agencia.errors %}
+                                <div class="text-danger small">{{ form.agencia.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="id_conta" class="form-label">Conta *</label>
+                            {{ form.conta }}
+                            {% if form.conta.errors %}
+                                <div class="text-danger small">{{ form.conta.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="id_tipo_conta" class="form-label">Tipo *</label>
+                            {{ form.tipo_conta }}
+                            {% if form.tipo_conta.errors %}
+                                <div class="text-danger small">{{ form.tipo_conta.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_titular" class="form-label">Titular da Conta *</label>
+                        {{ form.titular }}
+                        {% if form.titular.errors %}
+                            <div class="text-danger small">{{ form.titular.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="id_cpf_titular" class="form-label">CPF do Titular *</label>
+                        {{ form.cpf_titular }}
+                        {% if form.cpf_titular.errors %}
+                            <div class="text-danger small">{{ form.cpf_titular.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Salvar Dados
+                        </button>
+                        <a href="{% url 'my_requests' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
