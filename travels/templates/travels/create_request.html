@@ -38,21 +38,30 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="id_valor_litro" class="form-label">Valor do Litro (R$)</label>
+                        <div class="col-md-4 mb-3">
+                            <label for="id_valor_litro" class="form-label">Valor do Litro (R$) *</label>
                             {{ form.valor_litro }}
                             {% if form.valor_litro.errors %}
                                 <div class="text-danger small">{{ form.valor_litro.errors }}</div>
                             {% endif %}
-                            <small class="text-muted">Opcional - apenas para referência</small>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="id_valor_total_combustivel" class="form-label">Valor Total Combustível (R$) *</label>
-                            {{ form.valor_total_combustivel }}
-                            {% if form.valor_total_combustivel.errors %}
-                                <div class="text-danger small">{{ form.valor_total_combustivel.errors }}</div>
+                        <div class="col-md-4 mb-3">
+                            <label for="id_consumo_medio" class="form-label">Consumo Médio (km/L) *</label>
+                            {{ form.consumo_medio }}
+                            {% if form.consumo_medio.errors %}
+                                <div class="text-danger small">{{ form.consumo_medio.errors }}</div>
                             {% endif %}
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="valor_calculado" class="form-label">Valor Total (R$)</label>
+                            <input type="text" id="valor_calculado" class="form-control bg-light" readonly value="R$ 0,00">
+                            <small class="text-muted">Calculado automaticamente</small>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Cálculo:</strong> (Quilometragem ÷ Consumo Médio) × Valor do Litro = Valor Total
                     </div>
 
                     <div class="mb-3">
@@ -88,4 +97,39 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Função para calcular o valor total automaticamente
+    function calcularValorTotal() {
+        const quilometragem = parseFloat(document.getElementById('id_quilometragem').value) || 0;
+        const valorLitro = parseFloat(document.getElementById('id_valor_litro').value) || 0;
+        const consumoMedio = parseFloat(document.getElementById('id_consumo_medio').value) || 0;
+
+        let valorTotal = 0;
+        if (quilometragem > 0 && valorLitro > 0 && consumoMedio > 0) {
+            const litrosGastos = quilometragem / consumoMedio;
+            valorTotal = litrosGastos * valorLitro;
+        }
+
+        // Formatar como moeda brasileira
+        const valorFormatado = valorTotal.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        });
+
+        document.getElementById('valor_calculado').value = valorFormatado;
+    }
+
+    // Adicionar listeners aos campos
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('id_quilometragem').addEventListener('input', calcularValorTotal);
+        document.getElementById('id_valor_litro').addEventListener('input', calcularValorTotal);
+        document.getElementById('id_consumo_medio').addEventListener('input', calcularValorTotal);
+
+        // Calcular na carga da página (se houver valores)
+        calcularValorTotal();
+    });
+</script>
 {% endblock %}

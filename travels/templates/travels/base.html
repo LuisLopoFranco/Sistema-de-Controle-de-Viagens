@@ -90,10 +90,12 @@
                             <span class="badge bg-light text-dark ms-1">{{ user.profile.get_user_type_display }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            {% if user.profile.user_type == 'SOLICITANTE' %}
                             <li><a class="dropdown-item" href="{% url 'bank_account' %}">
                                 <i class="bi bi-bank"></i> Conta Bancária
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
+                            {% endif %}
                             <li><a class="dropdown-item" href="{% url 'logout' %}">
                                 <i class="bi bi-box-arrow-right"></i> Sair
                             </a></li>

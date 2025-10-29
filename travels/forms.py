@@ -65,7 +65,7 @@ class TravelRequestForm(forms.ModelForm):
             'data_viagem',
             'quilometragem',
             'valor_litro',
-            'valor_total_combustivel',
+            'consumo_medio',
             'nota_fiscal',
             'conta_bancaria'
         ]
@@ -81,17 +81,20 @@ class TravelRequestForm(forms.ModelForm):
             'quilometragem': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ex: 150.50',
-                'step': '0.01'
+                'step': '0.01',
+                'id': 'id_quilometragem'
             }),
             'valor_litro': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ex: 5.50',
-                'step': '0.01'
+                'step': '0.01',
+                'id': 'id_valor_litro'
             }),
-            'valor_total_combustivel': forms.NumberInput(attrs={
+            'consumo_medio': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Ex: 165.00',
-                'step': '0.01'
+                'placeholder': 'Ex: 10.00',
+                'step': '0.01',
+                'id': 'id_consumo_medio'
             }),
             'nota_fiscal': forms.FileInput(attrs={
                 'class': 'form-control',
@@ -111,6 +114,12 @@ class TravelRequestForm(forms.ModelForm):
         # Tornar conta_bancaria obrigatória
         self.fields['conta_bancaria'].required = True
         self.fields['conta_bancaria'].empty_label = "Selecione uma conta bancária"
+
+        # Definir valor padrão do consumo médio a partir da configuração
+        if not self.instance.pk:  # Apenas para novas instâncias
+            from .models import SystemConfig
+            config = SystemConfig.get_config()
+            self.fields['consumo_medio'].initial = config.consumo_medio_padrao
 
 
 class TravelApprovalForm(forms.Form):

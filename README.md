@@ -8,9 +8,11 @@ Sistema web desenvolvido em Python/Django para gerenciamento de solicitações d
 - Cadastro e autenticação de usuários
 - Registro de dados bancários para reembolso
 - Criação de solicitações de viagem com:
-  - Quilometragem rodada
-  - Valor do litro/total de combustível
   - Destino e data da viagem
+  - Quilometragem rodada
+  - Valor do litro de combustível
+  - Consumo médio do veículo (km/L)
+  - **Cálculo automático** do valor total (em tempo real)
   - Upload de nota fiscal
   - Seleção de conta bancária para reembolso
 - Visualização de suas próprias solicitações
@@ -28,6 +30,19 @@ Sistema web desenvolvido em Python/Django para gerenciamento de solicitações d
   - Ranking de colaboradores por número de viagens
   - Solicitações recentes
 - Filtros por período, status e colaborador
+- Acesso bloqueado ao cadastro de conta bancária (apenas para solicitantes)
+
+### Para Administradores (Superusuário)
+- Todas as funcionalidades de aprovador
+- Gerenciamento completo de usuários:
+  - Criar novos usuários
+  - Ativar/Inativar usuários em massa
+  - Alterar tipo de usuário (Solicitante ↔ Aprovador)
+  - Redefinir senhas de usuários
+- Configurações do sistema:
+  - Configurar URL da aplicação
+  - Definir consumo médio padrão dos veículos
+  - Configurar nome da empresa
 
 ## Tecnologias Utilizadas
 
@@ -107,7 +122,13 @@ Abra seu navegador e acesse: http://127.0.0.1:8000
 
 2. **Criar Solicitação de Viagem**
    - Clique em "Nova Solicitação"
-   - Preencha os dados da viagem
+   - Preencha os dados da viagem:
+     - Destino
+     - Data da viagem
+     - Quilometragem rodada
+     - Valor do litro de combustível
+     - Consumo médio do veículo (pré-preenchido automaticamente)
+   - O sistema calculará automaticamente o valor total em tempo real
    - Faça upload da nota fiscal (PDF, JPG ou PNG)
    - Selecione a conta bancária para reembolso
    - Clique em "Criar Solicitação"
@@ -134,9 +155,47 @@ Abra seu navegador e acesse: http://127.0.0.1:8000
 ### Painel Administrativo
 
 Acesse http://127.0.0.1:8000/admin com as credenciais de superusuário para:
-- Gerenciar usuários
-- Alterar perfis de usuário (Solicitante ↔ Aprovador)
-- Visualizar e editar todas as informações do sistema
+
+**Gerenciamento de Usuários:**
+- Criar novos usuários manualmente
+- Ativar/Inativar usuários (ação em massa)
+- Alterar perfis de usuário: Solicitante ↔ Aprovador (ação em massa)
+- Redefinir senhas de usuários
+- Visualizar histórico de atividades
+
+**Configurações do Sistema:**
+- Configurar URL da aplicação (para acesso interno/externo)
+- Definir consumo médio padrão dos veículos (usado como valor inicial)
+- Configurar nome da empresa
+- Personalizar nome da aplicação
+
+**Gerenciamento de Dados:**
+- Visualizar e editar todas as solicitações de viagem
+- Gerenciar contas bancárias
+- Acessar logs e auditoria do sistema
+
+## Cálculo Automático de Gastos
+
+O sistema calcula automaticamente o valor total do gasto com combustível usando a seguinte fórmula:
+
+```
+Valor Total = (Quilometragem ÷ Consumo Médio) × Valor do Litro
+```
+
+**Exemplo:**
+- Quilometragem: 150 km
+- Consumo médio: 10 km/L
+- Valor do litro: R$ 5,50
+
+```
+Litros gastos = 150 ÷ 10 = 15 litros
+Valor total = 15 × 5,50 = R$ 82,50
+```
+
+O cálculo é realizado:
+- **Em tempo real** durante o preenchimento do formulário (JavaScript)
+- **No backend** antes de salvar no banco de dados (Python)
+- Usando o consumo médio configurado pelo administrador como padrão
 
 ## Estrutura do Projeto
 

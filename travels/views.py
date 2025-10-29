@@ -278,7 +278,12 @@ def dashboard(request):
 
 @login_required
 def bank_account(request):
-    """Gerenciar conta bancária"""
+    """Gerenciar conta bancária - apenas para solicitantes"""
+    # Verificar se o usuário é solicitante
+    if request.user.profile.user_type != 'SOLICITANTE':
+        messages.error(request, 'Apenas solicitantes podem cadastrar contas bancárias.')
+        return redirect('home')
+
     try:
         account = request.user.bank_account
         is_new = False
