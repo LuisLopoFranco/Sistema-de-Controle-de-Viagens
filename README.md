@@ -9,7 +9,6 @@ Sistema web para solicitação e aprovação de reembolso de despesas de viagem.
 O colaborador registra a viagem com a nota fiscal, o sistema calcula o gasto
 com combustível, e um aprovador decide.
 
-<!-- SUBSTITUA pelo caminho real depois de tirar os prints -->
 ![Tela de listagem de solicitações](docs/imagens/minhas-solicitacoes.png)
 
 
@@ -189,7 +188,6 @@ sistema não tem:
 
 ## Credenciais da demonstração
 
-<!-- PREENCHA depois do deploy, com contas criadas só para o ambiente público -->
 
 | Perfil | Usuário | Senha |
 |---|---|---|
