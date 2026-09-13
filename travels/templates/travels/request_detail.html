@@ -61,7 +61,7 @@
                         <h5 class="mb-0"><i class="bi bi-file-earmark-pdf"></i> Nota Fiscal</h5>
                     </div>
                     <div class="card-body">
-                        <a href="{{ travel_request.nota_fiscal.url }}" target="_blank" class="btn btn-outline-primary">
+                        <a href="{% url 'nota_fiscal' travel_request.pk %}" target="_blank" class="btn btn-outline-primary">
                             <i class="bi bi-download"></i> Baixar Nota Fiscal
                         </a>
                     </div>

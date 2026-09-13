@@ -12,7 +12,7 @@ from .forms import (
     TravelRequestForm,
     TravelApprovalForm
 )
-
+from django.http import FileResponse, Http404
 
 def register(request):
     """Registro de novo usuário"""
@@ -306,3 +306,26 @@ def bank_account(request):
         'form': form,
         'is_new': is_new
     })
+@login_required
+def nota_fiscal(request, pk):
+    """
+    Entrega o arquivo da nota fiscal apenas a quem pode vê-lo.
+
+    Antes, os arquivos ficavam em MEDIA_ROOT servido diretamente pelo
+    servidor web: qualquer pessoa com a URL baixava o documento sem estar
+    autenticada. Notas fiscais contêm dados pessoais, então a entrega passa
+    a depender da mesma regra de permissão da tela de detalhe.
+    """
+    solicitacao = get_object_or_404(TravelRequest, pk=pk)
+
+    eh_aprovador = request.user.profile.user_type == 'APROVADOR'
+    eh_dono = solicitacao.solicitante_id == request.user.id
+    if not (eh_aprovador or eh_dono):
+        # 404 em vez de 403: negar sem confirmar que a solicitação existe.
+        raise Http404
+
+    if not solicitacao.nota_fiscal:
+        raise Http404
+
+    return FileResponse(solicitacao.nota_fiscal.open('rb'))
+
