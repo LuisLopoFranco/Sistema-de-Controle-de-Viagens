@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from decimal import Decimal
-
+from .uploads import caminho_nota_fiscal, validar_nota_fiscal
 
 class UserProfile(models.Model):
     """Perfil do usuário estendendo o modelo User do Django"""
@@ -97,8 +97,9 @@ class TravelRequest(models.Model):
     # Documentação
     nota_fiscal = models.FileField(
         upload_to='notas_fiscais/%Y/%m/',
+        validators=[validar_nota_fiscal],
         verbose_name="Nota Fiscal",
-        help_text="Upload da nota fiscal de combustível"
+        help_text="PDF, JPG OU PNG , até 5MB"
     )
 
     # Dados bancários (referência)

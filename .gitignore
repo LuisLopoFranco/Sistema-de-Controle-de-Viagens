@@ -4,17 +4,12 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
 build/
 develop-eggs/
 dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/
@@ -23,18 +18,28 @@ wheels/
 .installed.cfg
 *.egg
 
+# Ambientes virtuais
+env/
+venv/
+ENV/
+.venv
+
 # Django
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-/media
-/staticfiles
-/static
 
-# Environment
+# Uploads dos usuários (notas fiscais) — dados pessoais, nunca versionar
+/media
+
+# Resultado do collectstatic — gerado no deploy, não versionado.
+# ATENÇÃO: apenas /staticfiles é ignorado. A pasta /static contém o CSS e o
+# JS escritos à mão e PRECISA estar no repositório.
+/staticfiles
+
+# Segredos
 .env
-.venv
 
 # IDE
 .vscode/

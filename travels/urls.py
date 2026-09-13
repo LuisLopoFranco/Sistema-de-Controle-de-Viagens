@@ -12,6 +12,7 @@ urlpatterns = [
     path('', views.home, name='home'),
 
     # Solicitante
+    path('solicitacao/<int:pk>/nota-fiscal/', views.nota_fiscal, name='nota_fiscal'),
     path('minhas-solicitacoes/', views.my_requests, name='my_requests'),
     path('nova-solicitacao/', views.create_request, name='create_request'),
     path('conta-bancaria/', views.bank_account, name='bank_account'),
@@ -24,4 +25,6 @@ urlpatterns = [
     path('todas-solicitacoes/', views.all_requests, name='all_requests'),
     path('aprovar/<int:pk>/', views.approve_request, name='approve_request'),
     path('rejeitar/<int:pk>/', views.reject_request, name='reject_request'),
+
+    
 ]

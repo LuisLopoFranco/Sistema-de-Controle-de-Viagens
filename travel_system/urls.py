@@ -1,31 +1,23 @@
 """
-URL configuration for travel_system project.
+Roteamento principal do projeto.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+Os arquivos de mídia (notas fiscais) NÃO são expostos aqui. Servir MEDIA_ROOT
+diretamente deixaria qualquer documento acessível a quem descobrisse a URL,
+sem passar por autenticação. A entrega é feita pela view protegida
+travels.views.nota_fiscal.
 """
 
-from django.contrib import admin
-from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("travels.urls")),
 ]
 
-# Servir arquivos de media em desenvolvimento
+# Em desenvolvimento o Django serve os estáticos pelo runserver.
+# Em produção quem serve é o servidor web ou o WhiteNoise.
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
