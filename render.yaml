@@ -31,9 +31,9 @@ services:
 
       # Ajuste para o domínio real depois do primeiro deploy.
       - key: ALLOWED_HOSTS
-        value: "sistema-viagens.onrender.com"
+        value: "sistema-viagens-340f.onrender.com"
       - key: CSRF_TRUSTED_ORIGINS
-        value: "https://sistema-viagens.onrender.com"
+        value: "https://sistema-viagens-340f.onrender.com"
 
       - key: DATABASE_ENGINE
         value: postgres
