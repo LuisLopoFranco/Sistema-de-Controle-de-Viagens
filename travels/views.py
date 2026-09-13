@@ -12,7 +12,26 @@ from .forms import (
     TravelRequestForm,
     TravelApprovalForm
 )
+from django.core.paginator import Paginator
 from django.http import FileResponse, Http404
+
+from .permissions import aprovador_required
+
+# Quantas solicitações por página nas listagens.
+TAMANHO_PAGINA = 20
+
+
+def _querystring_filtros(request):
+    """
+    Devolve os parâmetros da URL sem o 'page', prontos para concatenar.
+
+    Os links de paginação precisam disso: sem preservar os filtros, ir para a
+    página 2 descartaria o status e o período que o usuário selecionou.
+    """
+    parametros = request.GET.copy()
+    parametros.pop('page', None)
+    codificado = parametros.urlencode()
+    return f'&{codificado}' if codificado else ''
 
 def register(request):
     """Registro de novo usuário"""
@@ -43,10 +62,17 @@ def home(request):
 @login_required
 def my_requests(request):
     """Lista de solicitações do usuário logado"""
-    requests = TravelRequest.objects.filter(solicitante=request.user)
+    requests = TravelRequest.objects.filter(
+        solicitante=request.user
+    ).select_related('aprovador', 'conta_bancaria')
+
+    # As estatísticas usam o queryset completo; só a listagem é paginada.
+    pagina = Paginator(requests, TAMANHO_PAGINA).get_page(request.GET.get('page'))
 
     context = {
-        'requests': requests,
+        'requests': pagina,
+        'page_obj': pagina,
+        'querystring_filtros': _querystring_filtros(request),
         'total_gasto': requests.filter(status='APROVADA').aggregate(
             total=Sum('valor_total_combustivel')
         )['total'] or Decimal('0.00'),
@@ -99,88 +125,77 @@ def request_detail(request, pk):
     return render(request, 'travels/request_detail.html', {'travel_request': travel_request})
 
 
-@login_required
+def _decidir_solicitacao(request, pk, novo_status, mensagem_sucesso, acao):
+    """
+    Aprova ou rejeita uma solicitação.
+
+    As duas operações eram funções separadas e idênticas, diferindo apenas no
+    status gravado e no texto da mensagem. Unificadas aqui, uma correção de
+    regra vale para as duas — antes era preciso lembrar de editar nos dois
+    lugares.
+    """
+    travel_request = get_object_or_404(TravelRequest, pk=pk)
+
+    if travel_request.status != 'PENDENTE':
+        messages.warning(request, 'Esta solicitação já foi processada.')
+        return redirect('all_requests')
+
+    if request.method == 'POST':
+        form = TravelApprovalForm(request.POST)
+        if form.is_valid():
+            travel_request.status = novo_status
+            travel_request.aprovador = request.user
+            travel_request.data_aprovacao = timezone.now()
+            travel_request.observacoes_aprovador = form.cleaned_data.get('observacoes', '')
+            travel_request.save()
+            messages.success(request, mensagem_sucesso)
+            return redirect('all_requests')
+    else:
+        form = TravelApprovalForm()
+
+    return render(request, 'travels/approve_request.html', {
+        'travel_request': travel_request,
+        'form': form,
+        'action': acao,
+    })
+
+
+@aprovador_required
 def approve_request(request, pk):
-    """Aprovar uma solicitação de viagem"""
-    # Verificar se é aprovador
-    if request.user.profile.user_type != 'APROVADOR':
-        messages.error(request, 'Você não tem permissão para aprovar solicitações.')
-        return redirect('home')
-
-    travel_request = get_object_or_404(TravelRequest, pk=pk)
-
-    if travel_request.status != 'PENDENTE':
-        messages.warning(request, 'Esta solicitação já foi processada.')
-        return redirect('all_requests')
-
-    if request.method == 'POST':
-        form = TravelApprovalForm(request.POST)
-        if form.is_valid():
-            travel_request.status = 'APROVADA'
-            travel_request.aprovador = request.user
-            travel_request.data_aprovacao = timezone.now()
-            travel_request.observacoes_aprovador = form.cleaned_data.get('observacoes', '')
-            travel_request.save()
-            messages.success(request, 'Solicitação aprovada com sucesso!')
-            return redirect('all_requests')
-    else:
-        form = TravelApprovalForm()
-
-    return render(request, 'travels/approve_request.html', {
-        'travel_request': travel_request,
-        'form': form,
-        'action': 'aprovar'
-    })
+    """Aprovar uma solicitação de viagem."""
+    return _decidir_solicitacao(
+        request, pk,
+        novo_status='APROVADA',
+        mensagem_sucesso='Solicitação aprovada com sucesso!',
+        acao='aprovar',
+    )
 
 
-@login_required
+@aprovador_required
 def reject_request(request, pk):
-    """Rejeitar uma solicitação de viagem"""
-    # Verificar se é aprovador
-    if request.user.profile.user_type != 'APROVADOR':
-        messages.error(request, 'Você não tem permissão para rejeitar solicitações.')
-        return redirect('home')
-
-    travel_request = get_object_or_404(TravelRequest, pk=pk)
-
-    if travel_request.status != 'PENDENTE':
-        messages.warning(request, 'Esta solicitação já foi processada.')
-        return redirect('all_requests')
-
-    if request.method == 'POST':
-        form = TravelApprovalForm(request.POST)
-        if form.is_valid():
-            travel_request.status = 'REJEITADA'
-            travel_request.aprovador = request.user
-            travel_request.data_aprovacao = timezone.now()
-            travel_request.observacoes_aprovador = form.cleaned_data.get('observacoes', '')
-            travel_request.save()
-            messages.success(request, 'Solicitação rejeitada.')
-            return redirect('all_requests')
-    else:
-        form = TravelApprovalForm()
-
-    return render(request, 'travels/approve_request.html', {
-        'travel_request': travel_request,
-        'form': form,
-        'action': 'rejeitar'
-    })
+    """Rejeitar uma solicitação de viagem."""
+    return _decidir_solicitacao(
+        request, pk,
+        novo_status='REJEITADA',
+        mensagem_sucesso='Solicitação rejeitada.',
+        acao='rejeitar',
+    )
 
 
-@login_required
+@aprovador_required
 def all_requests(request):
     """Lista de todas as solicitações - apenas para aprovadores"""
-    if request.user.profile.user_type != 'APROVADOR':
-        messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('home')
-
     # Filtros
     status_filter = request.GET.get('status', '')
     solicitante_filter = request.GET.get('solicitante', '')
     data_inicial = request.GET.get('data_inicial', '')
     data_final = request.GET.get('data_final', '')
 
-    requests = TravelRequest.objects.all()
+    # select_related evita uma consulta por linha ao exibir o nome do
+    # solicitante e a conta bancária no template (problema N+1).
+    requests = TravelRequest.objects.select_related(
+        'solicitante', 'aprovador', 'conta_bancaria'
+    )
 
     if status_filter:
         requests = requests.filter(status=status_filter)
@@ -198,8 +213,12 @@ def all_requests(request):
     if data_final:
         requests = requests.filter(data_viagem__lte=data_final)
 
+    pagina = Paginator(requests, TAMANHO_PAGINA).get_page(request.GET.get('page'))
+
     context = {
-        'requests': requests,
+        'requests': pagina,
+        'page_obj': pagina,
+        'querystring_filtros': _querystring_filtros(request),
         'status_filter': status_filter,
         'solicitante_filter': solicitante_filter,
         'data_inicial': data_inicial,
@@ -209,13 +228,9 @@ def all_requests(request):
     return render(request, 'travels/all_requests.html', context)
 
 
-@login_required
+@aprovador_required
 def dashboard(request):
     """Dashboard para aprovadores"""
-    if request.user.profile.user_type != 'APROVADOR':
-        messages.error(request, 'Você não tem permissão para acessar esta página.')
-        return redirect('home')
-
     # Filtros
     data_inicial = request.GET.get('data_inicial', '')
     data_final = request.GET.get('data_final', '')
