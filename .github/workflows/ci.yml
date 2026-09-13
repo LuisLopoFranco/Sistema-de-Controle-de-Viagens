@@ -29,7 +29,9 @@ jobs:
           --health-retries 10
 
     env:
-      SECRET_KEY: chave-apenas-para-ci
+      # O check --deploy exige 50+ caracteres. Não é segredo de verdade:
+      # existe só para a suíte rodar, e o repositório é público.
+      SECRET_KEY: ci-nao-e-segredo-de-producao-apenas-para-rodar-os-testes-no-github-actions
       DEBUG: "False"
       ALLOWED_HOSTS: localhost,127.0.0.1,testserver
       DATABASE_ENGINE: postgres
