@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from .uploads import caminho_nota_fiscal, validar_nota_fiscal
 
 class UserProfile(models.Model):
@@ -149,10 +149,16 @@ class TravelRequest(models.Model):
         Calcula o valor total do gasto com combustível
         Fórmula: (Quilometragem / Consumo Médio) * Valor do Litro
         """
-        if self.quilometragem and self.valor_litro and self.consumo_medio:
-            litros_gastos = self.quilometragem / self.consumo_medio
-            return litros_gastos * self.valor_litro
-        return Decimal('0.00')
+        if not (self.quilometragem and self.valor_litro and self.consumo_medio):
+            return Decimal('0.00')
+
+        litros_gastos = self.quilometragem / self.consumo_medio
+        total = litros_gastos * self.valor_litro
+
+        # Arredondamento explícito, com regra definida. Sem isso o Decimal
+        # sai com dezenas de casas e o banco trunca na gravação — o valor em
+        # memória depois do save() ficaria diferente do valor persistido.
+        return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     def save(self, *args, **kwargs):
         """Calcula automaticamente o valor total antes de salvar"""
@@ -215,18 +221,3 @@ class SystemConfig(models.Model):
         """Retorna a configuração do sistema, criando se não existir"""
         config, created = cls.objects.get_or_create(pk=1)
         return config
-
-
-# Signal para criar UserProfile automaticamente quando criar um User
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        UserProfile.objects.create(user=instance)
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    if hasattr(instance, 'profile'):
-        instance.profile.save()

@@ -1,0 +1,36 @@
+{% comment %}
+Controles de paginação, compartilhados pelas listagens.
+
+Preserva os filtros da URL ao trocar de página: sem isso, ir para a página 2
+descartaria o filtro de status e de período que o usuário aplicou.
+{% endcomment %}
+{% if page_obj.paginator.num_pages > 1 %}
+<nav aria-label="Paginação">
+  <ul class="pagination justify-content-center mt-3">
+
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ querystring_filtros }}">Anterior</a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+    {% endif %}
+
+    <li class="page-item disabled">
+      <span class="page-link">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        ({{ page_obj.paginator.count }} solicitações)
+      </span>
+    </li>
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ querystring_filtros }}">Próxima</a>
+      </li>
+    {% else %}
+      <li class="page-item disabled"><span class="page-link">Próxima</span></li>
+    {% endif %}
+
+  </ul>
+</nav>
+{% endif %}

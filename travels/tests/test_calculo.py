@@ -47,10 +47,6 @@ def test_carro_mais_economico_gasta_menos(criar_solicitacao):
     assert economico.calcular_gasto_total() == Decimal("27.50")
 
 
-@pytest.mark.xfail(
-    reason="Arredondamento explícito ainda não implementado — previsto na Fase 3",
-    strict=True,
-)
 def test_resultado_tem_no_maximo_duas_casas_decimais(criar_solicitacao):
     """
     100 km / 3 km por litro = 33,333... litros.
@@ -66,3 +62,28 @@ def test_resultado_tem_no_maximo_duas_casas_decimais(criar_solicitacao):
     resultado = solicitacao.calcular_gasto_total()
 
     assert resultado == resultado.quantize(Decimal("0.01"))
+
+def test_valor_em_memoria_bate_com_o_persistido(criar_solicitacao):
+    """A consequência prática do arredondamento explícito."""
+    solicitacao = criar_solicitacao(consumo_medio=Decimal("3.00"))
+    em_memoria = solicitacao.valor_total_combustivel
+
+    solicitacao.refresh_from_db()
+
+    assert em_memoria == solicitacao.valor_total_combustivel
+
+def test_arredondamento_e_meio_para_cima(criar_solicitacao):
+    """
+    150 km / 7 km por litro x R$ 4,00 = R$ 85,7142857...
+
+    Regra explícita: ROUND_HALF_UP, o arredondamento comercial que as pessoas
+    esperam. O padrão do Python é ROUND_HALF_EVEN, que arredondaria 0,125 para
+    0,12 — correto estatisticamente, surpreendente num recibo.
+    """
+    solicitacao = criar_solicitacao(
+        quilometragem=Decimal("150.00"),
+        consumo_medio=Decimal("7.00"),
+        valor_litro=Decimal("4.00"),
+    )
+
+    assert solicitacao.calcular_gasto_total() == Decimal("85.71")
