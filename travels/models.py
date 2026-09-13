@@ -96,7 +96,7 @@ class TravelRequest(models.Model):
 
     # Documentação
     nota_fiscal = models.FileField(
-        upload_to='notas_fiscais/%Y/%m/',
+        upload_to=caminho_nota_fiscal,
         validators=[validar_nota_fiscal],
         verbose_name="Nota Fiscal",
         help_text="PDF, JPG OU PNG , até 5MB"
