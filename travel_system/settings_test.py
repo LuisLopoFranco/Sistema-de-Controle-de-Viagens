@@ -16,3 +16,13 @@ os.environ.setdefault("DEBUG", "False")
 os.environ.setdefault("ALLOWED_HOSTS", "localhost,127.0.0.1,testserver")
 
 from .settings import *  # noqa: E402,F403
+
+# O WhiteNoise serve os estáticos já processados pelo collectstatic, que não
+# roda na suíte. Sem estas duas linhas, cada teste que renderiza template
+# emite "No directory at: staticfiles/" — ruído que esconde warning de
+# verdade. Servir estático não é o que estes testes verificam.
+MIDDLEWARE = [m for m in MIDDLEWARE if "whitenoise" not in m]  # noqa: F405
+STORAGES = {  # noqa: F405
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}

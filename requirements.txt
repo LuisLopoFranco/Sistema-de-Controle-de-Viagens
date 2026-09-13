@@ -4,3 +4,5 @@ python-decouple==3.8
 django-widget-tweaks==1.5.0
 reportlab==4.2.*
 gunicorn==23.0.*
+psycopg[binary]==3.2.*
+whitenoise==6.8.*
