@@ -1,0 +1,61 @@
+# Infraestrutura como código para o Render.
+#
+# Com este arquivo no repositório, o Render cria a aplicação e o banco a
+# partir dele em vez de exigir configuração manual pela interface — o que
+# torna o deploy reproduzível e revisável em pull request.
+
+databases:
+  - name: viagens-db
+    databaseName: viagens
+    user: viagens
+    plan: free
+
+services:
+  - type: web
+    name: sistema-viagens
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "python manage.py migrate --noinput && gunicorn travel_system.wsgi:application"
+    healthCheckPath: /login/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.9"
+
+      # Gerada pelo Render e nunca exibida no painel de configuração.
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: DEBUG
+        value: "False"
+
+      # Ajuste para o domínio real depois do primeiro deploy.
+      - key: ALLOWED_HOSTS
+        value: "sistema-viagens.onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://sistema-viagens.onrender.com"
+
+      - key: DATABASE_ENGINE
+        value: postgres
+
+      # Puxados do banco criado acima — nenhuma senha escrita à mão.
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: viagens-db
+          property: database
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: viagens-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: viagens-db
+          property: password
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: viagens-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: viagens-db
+          property: port

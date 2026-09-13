@@ -1,296 +1,213 @@
 # Sistema de Controle de Viagens
 
-Sistema web desenvolvido em Python/Django para gerenciamento de solicitações de reembolso de viagens, com fluxo de aprovação e dashboard de análise.
+[![CI](https://github.com/LuisLopoFranco/Sistema-de-Controle-de-Viagens/actions/workflows/ci.yml/badge.svg)](https://github.com/LuisLopoFranco/Sistema-de-Controle-de-Viagens/actions/workflows/ci.yml)
+[![Django](https://img.shields.io/badge/Django-5.2%20LTS-092E20?logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Licença: MIT](https://img.shields.io/badge/Licen%C3%A7a-MIT-blue.svg)](LICENSE)
 
-## Funcionalidades
+Sistema web para solicitação e aprovação de reembolso de despesas de viagem.
+O colaborador registra a viagem com a nota fiscal, o sistema calcula o gasto
+com combustível, e um aprovador decide.
 
-### Para Solicitantes
-- Cadastro e autenticação de usuários
-- Registro de dados bancários para reembolso
-- Criação de solicitações de viagem com:
-  - Destino e data da viagem
-  - Quilometragem rodada
-  - Valor do litro de combustível
-  - Consumo médio do veículo (km/L)
-  - **Cálculo automático** do valor total (em tempo real)
-  - Upload de nota fiscal
-  - Seleção de conta bancária para reembolso
-- Visualização de suas próprias solicitações
-- Acompanhamento do status (Pendente, Aprovada, Rejeitada)
-- Dashboard com estatísticas pessoais
+<!-- SUBSTITUA pelo caminho real depois de tirar os prints -->
+![Tela de listagem de solicitações](docs/imagens/minhas-solicitacoes.png)
 
-### Para Aprovadores
-- Visualização de todas as solicitações
-- Aprovação ou rejeição de viagens
-- Adição de observações nas aprovações/rejeições
-- Dashboard completo com:
-  - Estatísticas gerais (total de solicitações, pendentes, aprovadas, rejeitadas)
-  - Total de gastos aprovados
-  - Ranking de colaboradores por valor gasto
-  - Ranking de colaboradores por número de viagens
-  - Solicitações recentes
-- Filtros por período, status e colaborador
-- Acesso bloqueado ao cadastro de conta bancária (apenas para solicitantes)
+**[Ver demonstração ao vivo](https://SEU-APP.onrender.com)** ·
+credenciais de teste no final desta página
 
-### Para Administradores (Superusuário)
-- Todas as funcionalidades de aprovador
-- Gerenciamento completo de usuários:
-  - Criar novos usuários
-  - Ativar/Inativar usuários em massa
-  - Alterar tipo de usuário (Solicitante ↔ Aprovador)
-  - Redefinir senhas de usuários
-- Configurações do sistema:
-  - Configurar URL da aplicação
-  - Definir consumo médio padrão dos veículos
-  - Configurar nome da empresa
+---
 
-## Tecnologias Utilizadas
+## O que o sistema faz
 
-- **Python 3.x**
-- **Django 4.2.7** - Framework web
-- **Bootstrap 5.3** - Interface responsiva e moderna
-- **SQLite** - Banco de dados (desenvolvimento)
-- **Pillow** - Processamento de imagens
+**Solicitante** cadastra a conta bancária de reembolso, registra a viagem
+(destino, data, quilometragem, valor do litro, consumo médio do veículo),
+anexa a nota fiscal e acompanha o status.
 
-## Instalação
+**Aprovador** vê todas as solicitações com filtros por status, solicitante e
+período, aprova ou rejeita com observações, e acessa um painel com totais e
+ranking de gastos.
 
-### Pré-requisitos
+O valor do reembolso é calculado pelo sistema, não digitado:
 
-- Python 3.8 ou superior
-- pip (gerenciador de pacotes Python)
+```
+(quilometragem / consumo médio) × valor do litro
+```
 
-### Passo a Passo
+O resultado é arredondado para dois decimais com `ROUND_HALF_UP` — o
+arredondamento comercial. O padrão do Python é `ROUND_HALF_EVEN`, que
+arredondaria R$ 0,125 para R$ 0,12: correto estatisticamente, estranho num
+recibo.
 
-1. **Clone o repositório**
+---
+
+## Decisões técnicas
+
+Algumas escolhas do projeto que não são óbvias:
+
+**Notas fiscais não são servidas como arquivo estático.** Elas passam por uma
+view autenticada que verifica se o usuário é o dono da solicitação ou um
+aprovador. Servir `MEDIA_ROOT` diretamente deixaria qualquer documento
+acessível a quem descobrisse a URL — e nota fiscal contém dados pessoais. A
+view devolve 404 em vez de 403 para quem não tem permissão, porque 403
+confirmaria que a solicitação existe.
+
+**O upload é validado pelo conteúdo, não pela extensão.** Extensão e
+`Content-Type` são informados pelo cliente e podem ser forjados. O validador
+lê os primeiros bytes do arquivo e confere a assinatura binária: um PDF de
+verdade começa com `%PDF-`. Um `.txt` renomeado para `.pdf` é recusado.
+
+**Os arquivos são gravados com nome UUID.** Nome vindo do usuário pode conter
+caracteres problemáticos, e nome previsível permitiria adivinhar a URL de
+documentos de terceiros.
+
+**Nenhum segredo está no código.** `SECRET_KEY`, `DEBUG` e credenciais de
+banco vêm de variáveis de ambiente. A `SECRET_KEY` não tem valor padrão de
+propósito: a aplicação não sobe sem ela, o que impede uma chave de
+desenvolvimento chegar a produção por descuido.
+
+**As listagens usam `select_related` e paginação.** Sem isso, exibir o nome do
+solicitante de cada linha dispararia uma consulta por registro. Há um teste
+que fixa o teto de consultas da listagem — problema de performance não quebra
+nada, só fica lento em silêncio conforme os dados crescem.
+
+---
+
+## Testes
+
+65 testes cobrindo cálculo de reembolso, validação de upload, permissões por
+perfil, fluxo de aprovação e paginação. Cobertura de 85%.
+
 ```bash
-git clone <url-do-repositorio>
+pytest
+pytest --cov=travels --cov-report=term-missing
+```
+
+| Módulo | Cobertura |
+|---|---|
+| `permissions.py` | 100% |
+| `signals.py` | 100% |
+| `uploads.py` | 92% |
+| `models.py` | 88% |
+| `views.py` | 67% |
+
+A cobertura de `views.py` é menor porque geração de PDF e telas de listagem
+simples não têm teste dedicado. Foi decisão, não esquecimento: o esforço está
+onde a falha custa caro — dinheiro, permissão e upload.
+
+O CI roda a cada push e pull request: a suíte contra PostgreSQL (não SQLite),
+verificação de migrações pendentes, `check --deploy` e build da imagem Docker.
+
+---
+
+## Stack
+
+Django 5.2 LTS · Python 3.13 · PostgreSQL · Bootstrap 5 · Gunicorn ·
+WhiteNoise · Docker · pytest · GitHub Actions
+
+---
+
+## Rodando localmente
+
+Requisitos: Python 3.13.
+
+```bash
+git clone https://github.com/LuisLopoFranco/Sistema-de-Controle-de-Viagens.git
 cd Sistema-de-Controle-de-Viagens
-```
 
-2. **Crie e ative um ambiente virtual (recomendado)**
-```bash
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate  # Windows
-```
+python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\Activate.ps1
 
-3. **Instale as dependências**
-```bash
 pip install -r requirements.txt
 ```
 
-4. **Execute as migrações do banco de dados**
+Configure o ambiente:
+
+```bash
+cp .env.example .env
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+Cole a chave gerada em `SECRET_KEY` dentro do `.env`.
+
 ```bash
 python manage.py migrate
-```
-
-5. **Crie usuários de demonstração (opcional)**
-```bash
-python create_demo_users.py
-```
-
-Este script criará os seguintes usuários para teste:
-- **admin** / admin123 (Aprovador + Superusuário)
-- **aprovador** / aprovador123 (Aprovador)
-- **solicitante** / solicitante123 (Solicitante)
-- **colaborador1** / senha123 (Solicitante)
-- **colaborador2** / senha223 (Solicitante)
-- **colaborador3** / senha323 (Solicitante)
-
-6. **Inicie o servidor de desenvolvimento**
-```bash
+python manage.py criar_usuarios_demo
 python manage.py runserver
 ```
 
-7. **Acesse o sistema**
-Abra seu navegador e acesse: http://127.0.0.1:8000
+O comando `criar_usuarios_demo` gera senhas aleatórias e as exibe uma única
+vez. Ele se recusa a rodar com `DEBUG=False`, para não criar contas
+administrativas de demonstração num ambiente real.
 
-## Uso do Sistema
+Por padrão o banco é SQLite, para não exigir PostgreSQL instalado só para
+experimentar o projeto.
 
-### Primeiro Acesso
+### Com Docker
 
-1. Acesse http://127.0.0.1:8000
-2. Faça login com um dos usuários criados ou cadastre-se
-3. Se for novo usuário, você será criado como **Solicitante** por padrão
-
-### Para Solicitantes
-
-1. **Cadastrar Conta Bancária** (obrigatório antes da primeira solicitação)
-   - Acesse "Conta Bancária" no menu lateral
-   - Preencha os dados bancários para reembolso
-
-2. **Criar Solicitação de Viagem**
-   - Clique em "Nova Solicitação"
-   - Preencha os dados da viagem:
-     - Destino
-     - Data da viagem
-     - Quilometragem rodada
-     - Valor do litro de combustível
-     - Consumo médio do veículo (pré-preenchido automaticamente)
-   - O sistema calculará automaticamente o valor total em tempo real
-   - Faça upload da nota fiscal (PDF, JPG ou PNG)
-   - Selecione a conta bancária para reembolso
-   - Clique em "Criar Solicitação"
-
-3. **Acompanhar Solicitações**
-   - Acesse "Minhas Solicitações"
-   - Visualize o status de cada solicitação
-   - Clique em "Ver" para detalhes completos
-
-### Para Aprovadores
-
-1. **Dashboard**
-   - Visualize estatísticas gerais do sistema
-   - Acompanhe rankings e gastos totais
-   - Use filtros de período para análises específicas
-
-2. **Aprovar/Rejeitar Solicitações**
-   - Acesse "Todas as Solicitações"
-   - Use filtros para encontrar solicitações específicas
-   - Clique em "Ver" para analisar os detalhes
-   - Clique em "Aprovar" ou "Rejeitar"
-   - Adicione observações (opcional para aprovação, recomendado para rejeição)
-
-### Painel Administrativo
-
-Acesse http://127.0.0.1:8000/admin com as credenciais de superusuário para:
-
-**Gerenciamento de Usuários:**
-- Criar novos usuários manualmente
-- Ativar/Inativar usuários (ação em massa)
-- Alterar perfis de usuário: Solicitante ↔ Aprovador (ação em massa)
-- Redefinir senhas de usuários
-- Visualizar histórico de atividades
-
-**Configurações do Sistema:**
-- Configurar URL da aplicação (para acesso interno/externo)
-- Definir consumo médio padrão dos veículos (usado como valor inicial)
-- Configurar nome da empresa
-- Personalizar nome da aplicação
-
-**Gerenciamento de Dados:**
-- Visualizar e editar todas as solicitações de viagem
-- Gerenciar contas bancárias
-- Acessar logs e auditoria do sistema
-
-## Cálculo Automático de Gastos
-
-O sistema calcula automaticamente o valor total do gasto com combustível usando a seguinte fórmula:
-
-```
-Valor Total = (Quilometragem ÷ Consumo Médio) × Valor do Litro
+```bash
+cp .env.example .env    # preencha SECRET_KEY e as variáveis POSTGRES_*
+docker compose up --build
 ```
 
-**Exemplo:**
-- Quilometragem: 150 km
-- Consumo médio: 10 km/L
-- Valor do litro: R$ 5,50
+Sobe a aplicação com PostgreSQL, roda as migrações e o `collectstatic`.
+Disponível em http://localhost:8000.
+
+---
+
+## Estrutura
 
 ```
-Litros gastos = 150 ÷ 10 = 15 litros
-Valor total = 15 × 5,50 = R$ 82,50
+travel_system/
+    settings.py           configuração por variáveis de ambiente
+    settings_test.py      ajustes específicos da suíte
+travels/
+    models.py             UserProfile, BankAccount, TravelRequest, SystemConfig
+    views.py              telas e fluxo de aprovação
+    permissions.py        decorator de restrição por perfil
+    uploads.py            validação e nomeação de notas fiscais
+    signals.py            criação automática de perfil
+    management/commands/  criar_usuarios_demo
+    tests/                65 testes
 ```
 
-O cálculo é realizado:
-- **Em tempo real** durante o preenchimento do formulário (JavaScript)
-- **No backend** antes de salvar no banco de dados (Python)
-- Usando o consumo médio configurado pelo administrador como padrão
+---
 
-## Estrutura do Projeto
+## Limitações conhecidas
 
-```
-Sistema-de-Controle-de-Viagens/
-├── travel_system/          # Configurações do projeto Django
-│   ├── settings.py        # Configurações gerais
-│   ├── urls.py            # URLs principais
-│   └── wsgi.py            # WSGI para produção
-├── travels/               # App principal
-│   ├── models.py         # Modelos de dados
-│   ├── views.py          # Lógica das views
-│   ├── forms.py          # Formulários
-│   ├── admin.py          # Configuração do admin
-│   ├── urls.py           # URLs do app
-│   └── templates/        # Templates HTML
-│       └── travels/
-│           ├── base.html
-│           ├── login.html
-│           ├── register.html
-│           ├── my_requests.html
-│           ├── create_request.html
-│           ├── request_detail.html
-│           ├── bank_account.html
-│           ├── dashboard.html
-│           ├── all_requests.html
-│           └── approve_request.html
-├── media/                 # Uploads (notas fiscais)
-├── static/               # Arquivos estáticos
-├── manage.py             # Script de gerenciamento Django
-├── requirements.txt      # Dependências Python
-├── create_demo_users.py  # Script para criar usuários de teste
-└── README.md            # Este arquivo
-```
+Registradas de propósito, para não passar impressão de completude que o
+sistema não tem:
 
-## Modelos de Dados
+- **Não valida data futura.** É possível registrar viagem que ainda não
+  aconteceu. A regra depende de haver ou não adiantamento de despesa, decisão
+  de negócio que não foi definida.
+- **Não há teto de quilometragem.** Uma solicitação com valor atípico chega ao
+  aprovador como qualquer outra.
+- **CPF não tem validação de dígito verificador.**
+- **Não há notificação por e-mail** quando uma solicitação muda de status.
+- **A geração de PDF não tem teste automatizado.**
 
-### UserProfile
-Estende o modelo User do Django com:
-- `user_type`: SOLICITANTE ou APROVADOR
-- `cpf`: CPF do usuário
-- `telefone`: Telefone de contato
+---
 
-### BankAccount
-Dados bancários para reembolso:
-- `banco`, `codigo_banco`, `agencia`, `conta`
-- `tipo_conta`: CORRENTE ou POUPANCA
-- `titular`, `cpf_titular`
+## Credenciais da demonstração
 
-### TravelRequest
-Solicitação de viagem:
-- Dados da viagem: destino, data, quilometragem
-- Dados de combustível: valor do litro, valor total
-- `nota_fiscal`: arquivo de comprovante
-- `conta_bancaria`: referência à conta para reembolso
-- `status`: PENDENTE, APROVADA, REJEITADA
-- Dados de aprovação: aprovador, data, observações
+<!-- PREENCHA depois do deploy, com contas criadas só para o ambiente público -->
 
-## Segurança
+| Perfil | Usuário | Senha |
+|---|---|---|
+| Aprovador | `demo-aprovador` | *(definir no deploy)* |
+| Solicitante | `demo-solicitante` | *(definir no deploy)* |
 
-- Autenticação obrigatória para todas as funcionalidades
-- Separação de permissões por perfil (Solicitante/Aprovador)
-- Validação de formulários
-- Proteção CSRF em todos os formulários
-- Upload seguro de arquivos com validação de tipo
+O ambiente de demonstração é reiniciado periodicamente e não contém dados
+reais.
 
-## Personalização
-
-### Alterar Perfil de Usuário
-
-Para alterar um usuário de Solicitante para Aprovador (ou vice-versa):
-
-1. Acesse o painel admin: http://127.0.0.1:8000/admin
-2. Vá em "Usuários"
-3. Selecione o usuário
-4. Na seção "Perfil", altere o "Tipo de usuário"
-5. Salve
-
-### Configurar para Produção
-
-1. Altere `DEBUG = False` em `settings.py`
-2. Configure `ALLOWED_HOSTS` com seu domínio
-3. Use PostgreSQL ou MySQL ao invés de SQLite
-4. Configure variáveis de ambiente para SECRET_KEY
-5. Configure servidor de arquivos estáticos (nginx, WhiteNoise)
-6. Use servidor WSGI como Gunicorn
-
-## Suporte e Contribuições
-
-Para reportar bugs ou sugerir melhorias, abra uma issue no repositório do projeto.
+---
 
 ## Licença
 
-Este projeto foi desenvolvido para fins educacionais e empresariais.
+MIT — veja [LICENSE](LICENSE).
 
 ## Autor
 
-Sistema desenvolvido com Python/Django para gerenciamento de viagens e reembolsos.
+**Luis Gabriel Lopo** ·
+[GitHub](https://github.com/LuisLopoFranco) ·
+[LinkedIn](https://www.linkedin.com/in/luis-gabriel-lopo/)
