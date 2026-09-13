@@ -1,0 +1,49 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      # Volume nomeado: os dados sobrevivem a docker compose down.
+      - dados_postgres:/var/lib/postgresql/data
+    healthcheck:
+      # A aplicação só sobe depois que o banco aceita conexão. Sem isso, o
+      # Django tenta migrar antes do Postgres estar pronto e quebra.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             gunicorn travel_system.wsgi:application
+             --bind 0.0.0.0:8000 --workers 3 --timeout 60 --access-logfile -"
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DATABASE_ENGINE: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Dentro da rede do compose, o host do banco é o nome do serviço.
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    volumes:
+      # Notas fiscais precisam sobreviver a recriações do container.
+      - dados_media:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  dados_postgres:
+  dados_media:

@@ -1,0 +1,28 @@
+# Segredos — nunca devem entrar na imagem.
+.env
+
+# Ambiente virtual local: a imagem instala as dependências do zero.
+venv/
+.venv/
+env/
+
+# Banco e uploads locais.
+db.sqlite3
+media/
+staticfiles/
+
+# Cache e artefatos de teste.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Histórico do Git: pesa e não serve para nada em execução.
+.git/
+.gitignore
+
+# Documentação e IDE.
+*.md
+.vscode/
+.idea/
