@@ -16,7 +16,7 @@ services:
     runtime: python
     plan: free
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
-    startCommand: "python manage.py migrate --noinput && gunicorn travel_system.wsgi:application"
+    startCommand: "startCommand: "python manage.py migrate --noinput && python manage.py criar_usuarios_demo --forcar && gunicorn travel_system.wsgi:application""
     healthCheckPath: /login/
     envVars:
       - key: PYTHON_VERSION
