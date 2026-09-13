@@ -12,8 +12,7 @@ com combustível, e um aprovador decide.
 <!-- SUBSTITUA pelo caminho real depois de tirar os prints -->
 ![Tela de listagem de solicitações](docs/imagens/minhas-solicitacoes.png)
 
-**[Ver demonstração ao vivo](https://SEU-APP.onrender.com)** ·
-credenciais de teste no final desta página
+
 
 ---
 
